@@ -1,0 +1,13 @@
+build-gen-idx:
+  generated-by: uVision version 5.43.1.0
+  generators:
+    - board: 
+      device: STM32C031C6Tx
+      id: CubeMX
+      output: D:/Mula/Documents/Matias/Study/EmbeddedSystems/modern-embedded-programming-course-main/lesson-04/test/STM32CubeMX/Target_1/STM32CubeMX/MDK-ARM/STM32CubeMX/STM32CubeMX/
+      project-type: single-core
+      cbuild-gens:
+        - cbuild-gen: D:/Mula/Documents/Matias/Study/EmbeddedSystems/modern-embedded-programming-course-main/lesson-04/test/STM32CubeMX/Target_1/STM32CubeMX/MDK-ARM/STM32CubeMX.STM32CubeMX.cbuild-gen.yml
+          configuration: .STM32CubeMX
+          name: D:/Mula/Documents/Matias/Study/EmbeddedSystems/modern-embedded-programming-course-main/lesson-04/test/STM32CubeMX/Target_1/STM32CubeMX/MDK-ARM/STM32CubeMX/STM32CubeMX/STM32CubeMX.cgen.yml
+          project: STM32CubeMX
