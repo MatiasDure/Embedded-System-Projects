@@ -1,12 +1,24 @@
 #include "stm32c031xx.h"
 #include "bsp.h"
+#include "ring_buffer.h"
 
 #define PIN2 2U
 #define PIN3 3U
+#define RINGBUFFER_SIZE 128
+#define NEWLINE 0x0A
 
 void BSP_turnLED(char letter);
 void BSP_usartInit(void);
 void BSP_LEDsInit(void);
+
+volatile uint8_t buffer[RINGBUFFER_SIZE];
+volatile uint8_t newLine = 0U;
+ringBuffer rb = {
+	length: RINGBUFFER_SIZE,
+	buffer: buffer,
+	readPosition: 0,
+	writePosition: 0
+};
 
 void BSP_Init(void) {
 	// enable clock for port A
@@ -28,13 +40,22 @@ void BSP_usartInit(void) {
 	GPIOA->AFR[0] &= ~((0xFU << (PIN2 * 4U)) | (0xFU << (PIN3 * 4U)));
 	GPIOA->AFR[0] |= ((1U << (PIN2 * 4U)) | (1U << (PIN3 * 4U)));
 	
+	// Disable USART UE until its configured
+	USART2->CR1 &= ~(1U << 0U);
+	
 	//setting baud rate  12 MHz with baud rate 115200  12 MHz / 115200 = 104.7
 	USART2->BRR = 104U;
 	
-	// setting word length to 1 start bit, 8 data bit, n stop bit
+	// setting word length to 1 start bit, 8 data bit, n stop bit i.e "00"
 	USART2->CR1 &= ~((1U << 12U) | (1U << 28U));
-	// enabling uart and receiver
-	USART2->CR1 |= ((1U << 0U) | (1U << 2U));
+	// enabling IRS for Rx and Rx
+	USART2->CR1 |= ((1U << 2U) | (1U << 5U));
+	
+	// enabling USART UE
+	USART2->CR1 |= (1U << 0U);
+	
+	// enable interrupts for usart2
+	NVIC->ISER[0] |= (1U << USART2_IRQn);
 }
 
 void BSP_LEDsInit(void) {
@@ -44,16 +65,26 @@ void BSP_LEDsInit(void) {
 }
 
 void BSP_waitForCharacter(void) {
+	while(!newLine) __WFI();
 	
+	while(rb.readPosition != rb.writePosition) {
+		BSP_turnLED(ringBuffer_read(&rb));
+		uint32_t counter = 500000U;
+		while(counter > 0) counter--;
+	}
+	
+	newLine = 0U;
 	// Wait until REXNE bit is set to indicate that the content of the shift register
 	// is transfered to the RDR
+	// polling approach replaced with IRS
+	/*
 	while(((USART2->ISR & (1U << 5U)) == 0U)) {}
 	uint8_t c = USART2->RDR;
 	BSP_turnLED(c);
-	// clear ore flag
 	if((USART2->ISR & (1U << 3U)) != 0U) {
 		USART2->ICR = 1U << 3U;
 	}		
+	*/
 }
 
 void BSP_turnLED(char letter) {
@@ -105,4 +136,17 @@ void BSP_turnRedLED(void) {
 
 void BSP_turnOffRedLED(void) {
 	GPIOA->BSRR |= 1U << (LED_PA9 + 16U);
+}
+
+void USART2_IRQHandler(void) {
+	if((USART2->ISR & (1U << 5U))) {
+		//BSP_turnLED(c);
+		uint8_t c = USART2->RDR;
+		
+		if(c == NEWLINE) {
+			newLine = 1;
+			return;
+		}
+		ringBuffer_write(&rb, c);
+	}
 }
