@@ -10,6 +10,10 @@
 void BSP_turnLED(char letter);
 void BSP_usartInit(void);
 void BSP_LEDsInit(void);
+void BSP_portsInit(void);
+void BSP_buttonsInit(void);
+void BSP_timersInit(void);
+void BSP_lcdInit(void);
 
 volatile uint8_t buffer[RINGBUFFER_SIZE];
 volatile uint8_t newLine = 0U;
@@ -21,16 +25,74 @@ ringBuffer rb = {
 };
 
 void BSP_Init(void) {
-	// enable clock for port A
-	RCC->IOPENR |= (1U << 0U);
+	BSP_portsInit();
+	//BSP_LEDsInit();
+	BSP_timersInit();
+	//BSP_usartInit();
+}
+
+void BSP_portsInit(void) {
+	// enable clock for port A and B
+	RCC->IOPENR |= (1U << 0U) | (1U << 1U);
+}
+
+void BSP_buttonsInit(void) {
+	// set button pins to input with pull-down
+	GPIOA->MODER &= ~((3U << (BUTTON_GREEN * 2U)) | (3U << (BUTTON_RED * 2U)) | (3U << (BUTTON_BLUE * 2U)));
+	GPIOA->PUPDR &= ~((3U << (BUTTON_GREEN * 2U)) | (3U << (BUTTON_RED * 2U)) | (3U << (BUTTON_BLUE * 2U)));
+	GPIOA->PUPDR |= (2U << (BUTTON_GREEN * 2U)) | (2U << (BUTTON_RED * 2U)) | (2U << (BUTTON_BLUE * 2U));
+}
+
+void BSP_timersInit(void) {
+	// enable APB TIM1 peripheral clock (bit 11)
+	RCC->APBENR2 |= RCC_APBENR2_TIM1EN;
 	
-	BSP_LEDsInit();
-	BSP_usartInit();
+	// set buzzer pin as TIM alternate function to use PWM output signals
+	GPIOA->MODER &= ~((3U << (BUZZER_PWM_TIM1_CH1 * 2U)));
+	GPIOA->MODER |= (2U << (BUZZER_PWM_TIM1_CH1 * 2U));
+	
+	/* 
+		Check Table 13: Port A alternate function mapping (AF0 to AF7) for the value 
+		of the tim1_ch1 alternate function.
+		PA0-PA7 are part of the low registers AFR[0].
+	*/
+	GPIOA->AFR[0] &= ~((0xFU << (BUZZER_PWM_TIM1_CH1 * 4U)));
+	GPIOA->AFR[0] |= (5U << (BUZZER_PWM_TIM1_CH1 * 4U));
+	
+	// set prescaler to 12 to set clock speed to 1MHz (12MHz / 12 = 1MHz)
+	TIM1->PSC = 12U;
+	// Set counter top value (auto-reload) 
+	// Timer counts from 0 (1.000.000 hz / 500 = 2kHz frequency for the PWM)
+	TIM1->ARR = 499U;
+	
+	// duty cycle set to 50% of auto-reload value to stay HIGH half the duration of the timer count
+	TIM1->CCR1 = 250;
+	
+	// Configure PWM mode
+	TIM1->CCMR1 &= ~(7U << 4U);
+	TIM1->CCMR1 |= (6U << 4U); 
+	TIM1->CCMR1 |= (1U << 3U);     
+
+	// Enable CH1 output
+	TIM1->CCER |= (1U << 0U);
+	
+	// Main output enable
+	TIM1->BDTR |= (1U << 15U);
+	
+	// Enable counter
+	TIM1->CR1 |= (1U << 0U);
+
+	// Reinitialize the counter and generate an update of the registers
+	TIM1->EGR |= (1U << 0U);
+}
+
+void BSP_lcdInit(void) {
+	
 }
 
 void BSP_usartInit(void) {
 	// enable clock for USART2 in APB2 register
-	RCC->APBENR1 |= (1U << 17U);
+	RCC->APBENR1 |= RCC_APBENR1_USART2EN;
 	
 	// set pins 2 and 3 to alternate mode
 	GPIOA->MODER &= ~((3U << (USART2_TX * 2U)) | (3U << (USART2_RX * 2U)));
@@ -60,8 +122,8 @@ void BSP_usartInit(void) {
 
 void BSP_LEDsInit(void) {
 	// set led pins to output
-	GPIOA->MODER &= ~((3U << (LED_PA9 * 2U)) | (3U << (LED_PA15 * 2U)) | (3U << (LED_PA10 * 2U)));
-	GPIOA->MODER |= ((1U << (LED_PA9 * 2U)) | (1U << (LED_PA15 * 2U))  | (1U << (LED_PA10 * 2U)));
+	GPIOA->MODER &= ~((3U << (LED_GREEN * 2U)) | (3U << (LED_RED * 2U)) | (3U << (LED_BLUE * 2U)));
+	GPIOA->MODER |= ((1U << (LED_GREEN * 2U)) | (1U << (LED_RED * 2U))  | (1U << (LED_BLUE * 2U)));
 }
 
 void BSP_waitForCharacter(void) {
@@ -115,27 +177,27 @@ void BSP_turnLED(char letter) {
 }
 
 void BSP_turnGreenLED(void) {
-	GPIOA->BSRR |= 1U << LED_PA10; 
+	GPIOA->BSRR |= 1U << LED_GREEN; 
 }
 
 void BSP_turnOffGreenLED(void) {
-	GPIOA->BSRR |= 1U << (LED_PA10 + 16U);
+	GPIOA->BSRR |= 1U << (LED_GREEN + 16U);
 }
 
 void BSP_turnBlueLED(void) {
-	GPIOA->BSRR |= 1U << LED_PA15;
+	GPIOA->BSRR |= 1U << LED_BLUE;
 }
 
 void BSP_turnOffBlueLED(void) {
-	GPIOA->BSRR |= 1U << (LED_PA15 + 16U);
+	GPIOA->BSRR |= 1U << (LED_BLUE + 16U);
 }
 
 void BSP_turnRedLED(void) {
-	GPIOA->BSRR |= 1U << LED_PA9;
+	GPIOA->BSRR |= 1U << LED_RED;
 }
 
 void BSP_turnOffRedLED(void) {
-	GPIOA->BSRR |= 1U << (LED_PA9 + 16U);
+	GPIOA->BSRR |= 1U << (LED_RED + 16U);
 }
 
 void USART2_IRQHandler(void) {
