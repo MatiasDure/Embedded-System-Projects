@@ -489,6 +489,16 @@
               <FileType>5</FileType>
               <FilePath>.\STM32CubeMX\Target_1\STM32CubeMX\Src\ring_buffer.h</FilePath>
             </File>
+            <File>
+              <FileName>delay.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\delay.c</FilePath>
+            </File>
+            <File>
+              <FileName>delay.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\delay.h</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
