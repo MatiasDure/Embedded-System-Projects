@@ -492,12 +492,12 @@
             <File>
               <FileName>delay.c</FileName>
               <FileType>1</FileType>
-              <FilePath>.\delay.c</FilePath>
+              <FilePath>.\STM32CubeMX\Target_1\STM32CubeMX\Src\delay.c</FilePath>
             </File>
             <File>
               <FileName>delay.h</FileName>
               <FileType>5</FileType>
-              <FilePath>.\delay.h</FilePath>
+              <FilePath>.\STM32CubeMX\Target_1\STM32CubeMX\Src\delay.h</FilePath>
             </File>
           </Files>
         </Group>

@@ -1,11 +1,14 @@
 #include <stdint.h>
 #include "delay.h"
-
+/* 
+	Update delay with systick implementation for more accurate delays. 
+	Currently it works, but delays are not accurate when updating optimization levels (makes sense)
+*/
 void delay_ms(uint32_t ms) {
 	for(uint32_t i = 0; i < ms; ++i) {
 		// clock speed is 12MHz, so for 1 ms, we want to waste 12000 cycles 12000/12000000 = 0.001s = 1ms, 
-		// the for loop takes around 3-5 cycles depending on the compiler optimization, so we divide 12000 by 3 for a close estimate
-		for(volatile uint16_t j = 0; j < 4000U; ++j) {}
+		// the for loop takes different amount of cycles depending on the compiler optimization, so we divide 12000 by 12 for a close estimate
+		for(volatile uint16_t j = 0; j < 1000U; ++j) {}
 	}
 }
 
@@ -16,3 +19,6 @@ void delay_us(uint32_t us){
 		for(volatile uint8_t j = 0; j < 12U; ++j) {}
 	}
 }
+
+// dummy function to avoid wasting for loop cycles in delay implementations
+void delay_none(uint32_t time){}
