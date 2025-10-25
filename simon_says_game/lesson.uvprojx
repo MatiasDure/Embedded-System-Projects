@@ -502,6 +502,21 @@
           </Files>
         </Group>
         <Group>
+          <GroupName>Drivers</GroupName>
+          <Files>
+            <File>
+              <FileName>lcd1602.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\STM32CubeMX\Target_1\STM32CubeMX\Src\lcd1602.c</FilePath>
+            </File>
+            <File>
+              <FileName>lcd1602.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\STM32CubeMX\Target_1\STM32CubeMX\Src\lcd1602.h</FilePath>
+            </File>
+          </Files>
+        </Group>
+        <Group>
           <GroupName>::CMSIS</GroupName>
         </Group>
         <Group>

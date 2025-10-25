@@ -2,6 +2,7 @@
 #include "bsp.h"
 #include "ring_buffer.h"
 #include "delay.h"
+#include "lcd1602.h"
 
 #define USART2_TX 2U
 #define USART2_RX 3U
@@ -29,10 +30,36 @@ ringBuffer rb = {
 	writePosition: 0
 };
 
+LCD_TypeDef lcd = {
+	{ GPIOB, LCD_REGISTER_SELECT_PB0 },
+	{ GPIOB, LCD_ENABLE_SIGNAL_PB1 },
+	{ GPIOB, LCD_DB4_PB2 },
+	{ GPIOB, LCD_DB5_PB3 },
+	{ GPIOB, LCD_DB6_PB4 },
+	{ GPIOB, LCD_DB7_PB5 }
+};
+
 void BSP_Init(void) {
-	
 	BSP_portsInit();
-	BSP_lcdInit();
+	LCD_init(&lcd);
+	LCD_WriteData(&lcd,'H', delay_none, 0);
+	LCD_WriteData(&lcd,'E', delay_none, 0);
+	LCD_WriteData(&lcd,'L', delay_none, 0);
+	LCD_WriteData(&lcd,'L', delay_none, 0);
+	LCD_WriteData(&lcd,'O', delay_none, 0);
+	LCD_WriteData(&lcd,',', delay_none, 0);
+	// abstract commands in lcd driver!
+	LCD_WriteCommand(&lcd,0xC6, delay_none, 0);
+	LCD_WriteData(&lcd,'W', delay_none, 0);
+	LCD_WriteData(&lcd,'O', delay_none, 0);
+	LCD_WriteData(&lcd,'R', delay_none, 0);
+	LCD_WriteData(&lcd,'L', delay_none, 0);
+	LCD_WriteData(&lcd,'D', delay_none, 0);
+	LCD_WriteData(&lcd,'!', delay_none, 0);
+	// clear display
+	LCD_WriteCommand(&lcd, 0x1, delay_ms, 2);
+	// turn off display
+	LCD_WriteCommand(&lcd, 0x8, delay_us, 40);
 	//BSP_LEDsInit();
 	//BSP_timersInit();
 	//BSP_usartInit();
@@ -93,71 +120,6 @@ void BSP_timersInit(void) {
 	TIM1->EGR |= (1U << 0U);
 }
 
-void BSP_lcdInit(void) {
-	// setting lcd pins as output and no pull-up/pull-down resistors
-	GPIOB->MODER &= ~((3U << (LCD_REGISTER_SELECT_PB0 * 2U)) |
-										(3U << (LCD_ENABLE_SIGNAL_PB1 * 2U)) |
-										(3U << (LCD_DB4_PB2 * 2U)) |
-										(3U << (LCD_DB5_PB3 * 2U)) |
-										(3U << (LCD_DB6_PB4 * 2U)) |
-										(3U << (LCD_DB7_PB5 * 2U)));
-	GPIOB->MODER |= ((1U << (LCD_REGISTER_SELECT_PB0 * 2U)) |
-										(1U << (LCD_ENABLE_SIGNAL_PB1 * 2U)) |
-										(1U << (LCD_DB4_PB2 * 2U)) |
-										(1U << (LCD_DB5_PB3 * 2U)) |
-										(1U << (LCD_DB6_PB4 * 2U)) |
-										(1U << (LCD_DB7_PB5 * 2U)));
-	GPIOB->PUPDR &= ~((3U << (LCD_REGISTER_SELECT_PB0 * 2U)) |
-										(3U << (LCD_ENABLE_SIGNAL_PB1 * 2U)) |
-										(3U << (LCD_DB4_PB2 * 2U)) |
-										(3U << (LCD_DB5_PB3 * 2U)) |
-										(3U << (LCD_DB6_PB4 * 2U)) |
-										(3U << (LCD_DB7_PB5 * 2U)));
-	
-	/*
-		* Initialization sequence to wake up lcd
-		* Information about the initialization sequence can be found in the 
-		LCD-1602A datasheet: https://www.alldatasheet.com/datasheet-pdf/pdf/1574132/CRYSTAIFONTZ/LCD-1602A.html
-	*/
-	delay_ms(16);
-	// knocking door to force lcd to wake up in 8-bit mode
-	BSP_LCD_WriteCommand(0x30, &delay_ms, 5);
-	BSP_LCD_WriteCommand(0x30, &delay_us, 150);
-	BSP_LCD_WriteCommand(0x30, &delay_us, 1);
-	// set interface to 4-bit mode
-	BSP_LCD_WriteCommand(0x20, &delay_none, 0);
-	// specify display lines and character font
-	BSP_LCD_WriteCommand(0x28, &delay_none, 0);
-	// display off
-	BSP_LCD_WriteCommand(0x8, &delay_none, 0);
-	// display clear
-	BSP_LCD_WriteCommand(0x1, &delay_ms, 2);
-	// Entry mode set
-	BSP_LCD_WriteCommand(0x6, &delay_none, 0);
-	
-	// Set DDRAM address to 0
-	BSP_LCD_WriteCommand(0x80, &delay_none, 0); 
-	// turn on display
-	BSP_LCD_WriteCommand(0x0C, delay_us, 40);
-	// writing chars to tests
-	BSP_LCD_WriteData('H', &delay_none, 0);
-	BSP_LCD_WriteData('e', &delay_none, 0);
-	BSP_LCD_WriteData('l', &delay_none, 0);
-	BSP_LCD_WriteData('l', &delay_none, 0);
-	BSP_LCD_WriteData('o', &delay_none, 0);
-	// sending h as hex value
-	BSP_LCD_WriteData(0x68, &delay_none, 0);
-	// sending h as decimal
-	BSP_LCD_WriteData(104, &delay_none, 0);
-	// sending h as binary
-	BSP_LCD_WriteData(0b01101000, &delay_none, 0);
-	BSP_LCD_WriteData('!', &delay_none, 0);
-	delay_ms(5000);
-	// clear display
-	BSP_LCD_WriteCommand(0x1, delay_ms, 2);
-	// turn off display
-	BSP_LCD_WriteCommand(0x8, delay_us, 40);
-}
 
 void BSP_usartInit(void) {
 	// enable clock for USART2 in APB2 register
@@ -281,76 +243,3 @@ void USART2_IRQHandler(void) {
 		ringBuffer_write(&rb, c);
 	}
 }
-
-// To write in instruction input mode the RS bit needs to be set LOW
-void BSP_LCD_WriteCommand(uint8_t command, delayType delayFunc, uint32_t delayTime) {
-	// get nibbles
-	uint8_t binaryLowNibbles[4];
-	uint8_t binaryHighNibbles[4];
-	LCD_nibbles(binaryHighNibbles, binaryLowNibbles, command);
-	
-	// write instruction
-	GPIOB->BSRR = 1U << (LCD_REGISTER_SELECT_PB0 + 16U);
-	// send high nibbles first
-	writeNibbles(binaryHighNibbles);
-	// send low nibbles
-	writeNibbles(binaryLowNibbles);
-	delay_us(40);
-	delayFunc(delayTime);
-}
-
-// To write in data input mode the RS bit needs to be set HIGH
-void BSP_LCD_WriteData(uint8_t data, delayType delayFunc, uint32_t delayTime) {
-	// get nibbles
-	uint8_t binaryLowNibbles[4];
-	uint8_t binaryHighNibbles[4];
-	LCD_nibbles(binaryHighNibbles, binaryLowNibbles, data);
-	// write data
-	GPIOB->BSRR = 1U << (LCD_REGISTER_SELECT_PB0);
-	// send high nibbles first
-	writeNibbles(binaryHighNibbles);
-	// send low nibbles
-	writeNibbles(binaryLowNibbles);
-	delay_us(40);
-	delayFunc(delayTime);
-}
-
-void writeNibbles(uint8_t *nibbles) {
-	GPIOB->BRR = (1U << LCD_DB7_PB5) |
-								(1U << LCD_DB6_PB4) |
-								(1U << LCD_DB5_PB3) |
-								(1U << LCD_DB4_PB2);
-	// using ternary to ensure we are only setting 1 to the relevant bit, and not accidentally over-shifting if nibbles[x] > 1
-	GPIOB->BSRR = (nibbles[0] ? (1U << LCD_DB7_PB5) : 0) |
-								(nibbles[1] ? (1U << LCD_DB6_PB4) : 0) |
-								(nibbles[2] ? (1U << LCD_DB5_PB3) : 0) |
-								(nibbles[3] ? (1U << LCD_DB4_PB2) : 0);
-	delay_us(1);
-	LCD_sendData();
-}
-
-void LCD_sendData(void) {
-	// pulse enable
-	GPIOB->BSRR = 1U << LCD_ENABLE_SIGNAL_PB1;
-	delay_us(1U);
-	GPIOB->BSRR = 1U << (LCD_ENABLE_SIGNAL_PB1 + 16U);
-}
-
-// takes in a hexadecimal value and two pointers to separate the high a low nibbles for LCD 4-bit mode
-void LCD_nibbles(uint8_t *highNibbleBuffer, uint8_t *lowNibbleBuffer, uint8_t hexValue) {
-	uint8_t lowNibble = hexValue & 0xf;
-	uint8_t highNibble = hexValue >> 4U;
-	LCD_binaryNibble(highNibbleBuffer, highNibble, 3);
-	LCD_binaryNibble(lowNibbleBuffer, lowNibble, 3);
-}
-
-void LCD_binaryNibble(uint8_t *buffer, uint8_t nibbleValue, uint8_t index) {
-	if(index == 0U){
-		buffer[0] = nibbleValue % 2U;
-		return;
-	}
-	
-	buffer[index] = nibbleValue % 2U;
-	LCD_binaryNibble(buffer, nibbleValue / 2U, index - 1);
-}
-

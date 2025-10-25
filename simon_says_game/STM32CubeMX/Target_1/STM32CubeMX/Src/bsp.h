@@ -1,7 +1,7 @@
-#include <stdint.h>
-
 #ifndef __BSP_H__
 #define __BSP_H__
+
+#include <stdint.h>
 
 // output peripherals
 #define LED_GREEN_PA5 5U
@@ -26,8 +26,6 @@
 // analog peripherals
 #define POTENTIOMETER_ADC_IN1_PA1 1U
 
-typedef void (*delayType)(uint32_t);
-
 void BSP_Init(void);
 void BSP_turnGreenLED(void);
 void BSP_turnBlueLED(void);
@@ -36,7 +34,7 @@ void BSP_turnOffGreenLED(void);
 void BSP_turnOffBlueLED(void);
 void BSP_turnOffRedLED(void);
 void BSP_waitForCharacter(void);
-void BSP_LCD_WriteCommand(uint8_t command, delayType delayFunc, uint32_t delayTime);
-void BSP_LCD_WriteData(uint8_t data, delayType delayFunc, uint32_t delayTime);
+//void BSP_LCD_WriteCommand(uint8_t command, delayType delayFunc, uint32_t delayTime);
+//void BSP_LCD_WriteData(uint8_t data, delayType delayFunc, uint32_t delayTime);
 
 #endif // __BSP_H__
