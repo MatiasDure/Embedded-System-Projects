@@ -5,30 +5,20 @@
 #include "lcd1602.h"
 #include "led.h"
 
-#define USART2_TX 2U
-#define USART2_RX 3U
 #define RINGBUFFER_SIZE 128
 #define NEWLINE 0x0A
 
-void BSP_turnLED(char letter);
 void BSP_usartInit(void);
-void BSP_LEDsInit(void);
 void BSP_portsInit(void);
 void BSP_buttonsInit(void);
 void BSP_timersInit(void);
-void BSP_lcdInit(void);
-void LCD_nibbles(uint8_t *highNibble, uint8_t *lowNibble, uint8_t hexValue);
-void LCD_binaryNibble(uint8_t *buffer, uint8_t nibbleValue, uint8_t index);
-void writeNibbles(uint8_t * nibbles);
-void LCD_sendData(void);
 
 volatile uint8_t buffer[RINGBUFFER_SIZE];
 volatile uint8_t newLine = 0U;
 ringBuffer rb = {
-	length: RINGBUFFER_SIZE,
-	buffer: buffer,
-	readPosition: 0,
-	writePosition: 0
+	RINGBUFFER_SIZE,
+	buffer,
+	0, 0
 };
 
 LCD_TypeDef lcd = {
@@ -79,7 +69,6 @@ void BSP_Init(void) {
 	LED_turnOnLED(led.blueLED);
 	delay_ms(2000);
 	LED_turnOffLED(led.blueLED);
-	//BSP_LEDsInit();
 	//BSP_timersInit();
 	//BSP_usartInit();
 }
@@ -169,12 +158,6 @@ void BSP_usartInit(void) {
 	// enable interrupts for usart2
 	NVIC->ISER[0] |= (1U << USART2_IRQn);
 }
-/*
-void BSP_LEDsInit(void) {
-	// set led pins to output
-	GPIOA->MODER &= ~((3U << (LED_GREEN_PA5 * 2U)) | (3U << (LED_RED_PA6 * 2U)) | (3U << (LED_BLUE_PA15 * 2U)));
-	GPIOA->MODER |= ((1U << (LED_GREEN_PA5 * 2U)) | (1U << (LED_RED_PA6 * 2U))  | (1U << (LED_BLUE_PA15 * 2U)));
-}*/
 
 void BSP_waitForCharacter(void) {
 	while(!newLine) __WFI();
@@ -200,58 +183,6 @@ void BSP_waitForCharacter(void) {
 	}		
 	*/
 }
-/*
-void BSP_turnLED(char letter) {
-	switch(letter) {
-		case 'g':
-			BSP_turnGreenLED();
-			BSP_turnOffBlueLED();
-			BSP_turnOffRedLED();
-			break;
-		case 'r':
-			BSP_turnRedLED();
-			BSP_turnOffGreenLED();
-			BSP_turnOffBlueLED();
-			break;
-		case 'b':
-			BSP_turnBlueLED();
-			BSP_turnOffGreenLED();
-			BSP_turnOffRedLED();
-			break;
-		case 'o':
-			BSP_turnOffBlueLED();
-			BSP_turnOffGreenLED();
-			BSP_turnOffRedLED();
-		default:
-			// ignore other characters received for now
-			break;
-	}
-}
-
-void BSP_turnGreenLED(void) {
-	GPIOA->BSRR |= 1U << LED_GREEN_PA5; 
-}
-
-void BSP_turnOffGreenLED(void) {
-	GPIOA->BSRR |= 1U << (LED_GREEN_PA5 + 16U);
-}
-
-void BSP_turnBlueLED(void) {
-	GPIOA->BSRR |= 1U << LED_BLUE_PA15;
-}
-
-void BSP_turnOffBlueLED(void) {
-	GPIOA->BSRR |= 1U << (LED_BLUE_PA15 + 16U);
-}
-
-void BSP_turnRedLED(void) {
-	GPIOA->BSRR |= 1U << LED_RED_PA6;
-}
-
-void BSP_turnOffRedLED(void) {
-	GPIOA->BSRR |= 1U << (LED_RED_PA6 + 16U);
-}
-*/
 
 void USART2_IRQHandler(void) {
 	if((USART2->ISR & (1U << 5U))) {
