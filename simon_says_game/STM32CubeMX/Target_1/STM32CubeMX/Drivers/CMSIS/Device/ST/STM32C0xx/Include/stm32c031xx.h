@@ -272,6 +272,11 @@ typedef struct
   __IO uint32_t BRR;         /*!< GPIO Bit Reset register,               Address offset: 0x28      */
 } GPIO_TypeDef;
 
+typedef struct {
+	GPIO_TypeDef *port;
+	uint8_t pin_number;
+} STM_PinDef;
+
 
 /**
   * @brief Inter-integrated Circuit Interface

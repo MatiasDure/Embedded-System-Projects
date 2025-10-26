@@ -3,6 +3,7 @@
 #include "ring_buffer.h"
 #include "delay.h"
 #include "lcd1602.h"
+#include "led.h"
 
 #define USART2_TX 2U
 #define USART2_RX 3U
@@ -39,27 +40,45 @@ LCD_TypeDef lcd = {
 	{ GPIOB, LCD_DB7_PB5 }
 };
 
+LED_TypeDef led = {
+	{ GPIOA, LED_BLUE_PA15},
+	{ GPIOA, LED_RED_PA6},
+	{ GPIOA, LED_GREEN_PA5},
+};
+
+void getAsciiValue(char *buffer, uint8_t number, uint8_t length) {
+	// start from the end to reverse order
+	char *ptr = buffer + length - 1;
+	while(number > 0) {
+		uint8_t res = number % 10;
+		*ptr-- = res + 0x30;
+		--length;
+		number /= 10;
+	}
+	
+	while(length--) {
+		*ptr-- = 0x30;
+	}
+}
+
 void BSP_Init(void) {
 	BSP_portsInit();
-	LCD_init(&lcd);
-	LCD_WriteData(&lcd,'H', delay_none, 0);
-	LCD_WriteData(&lcd,'E', delay_none, 0);
-	LCD_WriteData(&lcd,'L', delay_none, 0);
-	LCD_WriteData(&lcd,'L', delay_none, 0);
-	LCD_WriteData(&lcd,'O', delay_none, 0);
-	LCD_WriteData(&lcd,',', delay_none, 0);
-	// abstract commands in lcd driver!
-	LCD_WriteCommand(&lcd,0xC6, delay_none, 0);
-	LCD_WriteData(&lcd,'W', delay_none, 0);
-	LCD_WriteData(&lcd,'O', delay_none, 0);
-	LCD_WriteData(&lcd,'R', delay_none, 0);
-	LCD_WriteData(&lcd,'L', delay_none, 0);
-	LCD_WriteData(&lcd,'D', delay_none, 0);
-	LCD_WriteData(&lcd,'!', delay_none, 0);
-	// clear display
-	LCD_WriteCommand(&lcd, 0x1, delay_ms, 2);
-	// turn off display
-	LCD_WriteCommand(&lcd, 0x8, delay_us, 40);
+	/*LCD_init(&lcd);
+	uint8_t score = 0;
+	char buffer[3];
+	getAsciiValue(buffer, score, 3);
+	LCD_writeText(&lcd, buffer, 3);
+	delay_ms(2000);
+	score+= 15;
+	getAsciiValue(buffer, score, 3);
+	LCD_writeText(&lcd, buffer, 3);
+	LCD_clearScreen(&lcd);
+	LCD_displayControl(&lcd, 0,0,0);
+	*/
+	LED_LEDsInit(&led);
+	LED_turnOnLED(led.blueLED);
+	delay_ms(2000);
+	LED_turnOffLED(led.blueLED);
 	//BSP_LEDsInit();
 	//BSP_timersInit();
 	//BSP_usartInit();
@@ -150,19 +169,21 @@ void BSP_usartInit(void) {
 	// enable interrupts for usart2
 	NVIC->ISER[0] |= (1U << USART2_IRQn);
 }
-
+/*
 void BSP_LEDsInit(void) {
 	// set led pins to output
 	GPIOA->MODER &= ~((3U << (LED_GREEN_PA5 * 2U)) | (3U << (LED_RED_PA6 * 2U)) | (3U << (LED_BLUE_PA15 * 2U)));
 	GPIOA->MODER |= ((1U << (LED_GREEN_PA5 * 2U)) | (1U << (LED_RED_PA6 * 2U))  | (1U << (LED_BLUE_PA15 * 2U)));
-}
+}*/
 
 void BSP_waitForCharacter(void) {
 	while(!newLine) __WFI();
 	
 	while(rb.readPosition != rb.writePosition) {
-		BSP_turnLED(ringBuffer_read(&rb));
-		uint32_t counter = 500000U;
+		//BSP_turnLED(ringBuffer_read(&rb));
+		
+		//random delay
+		uint32_t counter = 500000U; 
 		while(counter > 0) counter--;
 	}
 	
@@ -179,7 +200,7 @@ void BSP_waitForCharacter(void) {
 	}		
 	*/
 }
-
+/*
 void BSP_turnLED(char letter) {
 	switch(letter) {
 		case 'g':
@@ -230,6 +251,7 @@ void BSP_turnRedLED(void) {
 void BSP_turnOffRedLED(void) {
 	GPIOA->BSRR |= 1U << (LED_RED_PA6 + 16U);
 }
+*/
 
 void USART2_IRQHandler(void) {
 	if((USART2->ISR & (1U << 5U))) {
