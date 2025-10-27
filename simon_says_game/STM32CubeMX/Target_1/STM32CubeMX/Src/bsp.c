@@ -4,6 +4,7 @@
 #include "delay.h"
 #include "lcd1602.h"
 #include "led.h"
+#include "button.h"
 
 #define RINGBUFFER_SIZE 128
 #define NEWLINE 0x0A
@@ -31,9 +32,15 @@ LCD_TypeDef lcd = {
 };
 
 LED_TypeDef led = {
-	{ GPIOA, LED_BLUE_PA15},
-	{ GPIOA, LED_RED_PA6},
-	{ GPIOA, LED_GREEN_PA5},
+	{ GPIOA, LED_BLUE_PA15 },
+	{ GPIOA, LED_RED_PA6 },
+	{ GPIOA, LED_GREEN_PA5 },
+};
+
+Button_TypeDef buttons = {
+	{ GPIOA, BUTTON_RED_PA7, 0U, NOT_DEBOUNCING, 0U },
+	{ GPIOA, BUTTON_GREEN_PA4, 0U, NOT_DEBOUNCING, 0U },
+	{ GPIOA, BUTTON_BLUE_PA8, 0U, NOT_DEBOUNCING, 0U },
 };
 
 void getAsciiValue(char *buffer, uint8_t number, uint8_t length) {
@@ -65,10 +72,14 @@ void BSP_Init(void) {
 	LCD_clearScreen(&lcd);
 	LCD_displayControl(&lcd, 0,0,0);
 	*/
-	LED_LEDsInit(&led);
+	/*LED_LEDsInit(&led);
 	LED_turnOnLED(led.blueLED);
 	delay_ms(2000);
 	LED_turnOffLED(led.blueLED);
+	*/
+	LED_LEDsInit(&led);
+	Button_init(&buttons);
+	DelayService_init();
 	//BSP_timersInit();
 	//BSP_usartInit();
 }
@@ -76,13 +87,6 @@ void BSP_Init(void) {
 void BSP_portsInit(void) {
 	// enable clock for port A and B
 	RCC->IOPENR |= (1U << 0U) | (1U << 1U);
-}
-
-void BSP_buttonsInit(void) {
-	// set button pins to input with pull-down
-	GPIOA->MODER &= ~((3U << (BUTTON_GREEN_PA4 * 2U)) | (3U << (BUTTON_RED_PA7 * 2U)) | (3U << (BUTTON_BLUE_PA8 * 2U)));
-	GPIOA->PUPDR &= ~((3U << (BUTTON_GREEN_PA4 * 2U)) | (3U << (BUTTON_RED_PA7 * 2U)) | (3U << (BUTTON_BLUE_PA8 * 2U)));
-	GPIOA->PUPDR |= (2U << (BUTTON_GREEN_PA4 * 2U)) | (2U << (BUTTON_RED_PA7 * 2U)) | (2U << (BUTTON_BLUE_PA8 * 2U));
 }
 
 void BSP_timersInit(void) {
@@ -134,12 +138,12 @@ void BSP_usartInit(void) {
 	RCC->APBENR1 |= RCC_APBENR1_USART2EN;
 	
 	// set pins 2 and 3 to alternate mode
-	GPIOA->MODER &= ~((3U << (USART2_TX * 2U)) | (3U << (USART2_RX * 2U)));
-	GPIOA->MODER |= (2U << (USART2_TX * 2U)) | (2U << (USART2_RX * 2U));
+	GPIOA->MODER &= ~((3U << (USART2_TX_PA2 * 2U)) | (3U << (USART2_RX_PA3 * 2U)));
+	GPIOA->MODER |= (2U << (USART2_TX_PA2 * 2U)) | (2U << (USART2_RX_PA3 * 2U));
 	
 	// assigning pa2 and pa3 as alternate function (usart)
-	GPIOA->AFR[0] &= ~((0xFU << (USART2_TX * 4U)) | (0xFU << (USART2_RX * 4U)));
-	GPIOA->AFR[0] |= ((1U << (USART2_TX * 4U)) | (1U << (USART2_RX * 4U)));
+	GPIOA->AFR[0] &= ~((0xFU << (USART2_TX_PA2 * 4U)) | (0xFU << (USART2_RX_PA3 * 4U)));
+	GPIOA->AFR[0] |= ((1U << (USART2_TX_PA2 * 4U)) | (1U << (USART2_RX_PA3 * 4U)));
 	
 	// Disable USART UE until its configured
 	USART2->CR1 &= ~(1U << 0U);
@@ -159,8 +163,29 @@ void BSP_usartInit(void) {
 	NVIC->ISER[0] |= (1U << USART2_IRQn);
 }
 
+void redButtonCallback(void) {
+	LED_turnOnLED(led.redLED);
+	delay_ms(2000);
+	LED_turnOffLED(led.redLED);
+}
+
+void greenButtonCallback(void) {
+	LED_turnOnLED(led.greenLED);
+	delay_ms(2000);
+	LED_turnOffLED(led.greenLED);
+}
+
+void blueButtonCallback(void) {
+	LED_turnOnLED(led.blueLED);
+	delay_ms(2000);
+	LED_turnOffLED(led.blueLED);
+}
+
 void BSP_waitForCharacter(void) {
-	while(!newLine) __WFI();
+	Button_readPress(&buttons.redButton, &redButtonCallback);
+	Button_readPress(&buttons.greenButton, &greenButtonCallback);
+	Button_readPress(&buttons.blueButton, &blueButtonCallback);
+	/*while(!newLine) __WFI();
 	
 	while(rb.readPosition != rb.writePosition) {
 		//BSP_turnLED(ringBuffer_read(&rb));
@@ -170,7 +195,7 @@ void BSP_waitForCharacter(void) {
 		while(counter > 0) counter--;
 	}
 	
-	newLine = 0U;
+	newLine = 0U;*/
 	// Wait until REXNE bit is set to indicate that the content of the shift register
 	// is transfered to the RDR
 	// polling approach replaced with IRS

@@ -1,5 +1,18 @@
 #include <stdint.h>
+#include "stm32c031xx.h"
 #include "delay.h"
+
+static volatile uint32_t tick = 0U;
+
+void SysTick_Handler(void) {
+	++tick;
+}
+
+void DelayService_init(void) {
+	SystemCoreClockUpdate();
+	SysTick->LOAD = SystemCoreClock / 1000U - 1U;
+	SysTick->CTRL = (SysTick_CTRL_CLKSOURCE_Msk) | (SysTick_CTRL_TICKINT_Msk) | (SysTick_CTRL_ENABLE_Msk); 
+}
 /* 
 	Update delay with systick implementation for more accurate delays. 
 	Currently it works, but delays are not accurate when updating optimization levels (makes sense)
@@ -22,3 +35,11 @@ void delay_us(uint32_t us){
 
 // dummy function to avoid wasting for loop cycles in delay implementations
 void delay_none(uint32_t time){}
+	
+uint32_t getSysTickCounter(void) {
+	return tick;
+}
+
+uint8_t hasDelayElapsed(uint32_t timer, uint32_t delay) {
+	return (tick - timer) >= delay;
+}
