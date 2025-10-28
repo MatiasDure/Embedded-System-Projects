@@ -39,10 +39,24 @@ void LED_turnLED(LED_TypeDef * leds, char letter) {
 	}
 }
 
-void LED_turnOnLED(STM_PinDef greenLED) {
-	greenLED.port->BSRR |= 1U << greenLED.pin_number; 
+STM_PinDef LED_retrieveLEDByChar(LED_TypeDef* led, char letter) {
+	switch(letter) {
+		case 'g':
+			return led->greenLED;
+		case 'r':
+			return led->redLED;
+		case 'b':
+			return led->blueLED;
+		default:
+			// ignore other characters received for now and just return red
+			return led->redLED;
+	}
 }
 
-void LED_turnOffLED(STM_PinDef greenLED){
-	greenLED.port->BSRR |= 1U << (greenLED.pin_number + 16U);
+void LED_turnOnLED(STM_PinDef led) {
+	led.port->BSRR |= 1U << led.pin_number; 
+}
+
+void LED_turnOffLED(STM_PinDef led){
+	led.port->BSRR |= 1U << (led.pin_number + 16U);
 }

@@ -5,6 +5,7 @@
 #include "lcd1602.h"
 #include "led.h"
 #include "button.h"
+#include "game.h"
 
 #define RINGBUFFER_SIZE 128
 #define NEWLINE 0x0A
@@ -166,25 +167,31 @@ void BSP_usartInit(void) {
 void redButtonCallback(void) {
 	LED_turnOnLED(led.redLED);
 	delay_ms(2000);
+	//newDelay_ms(2000);
 	LED_turnOffLED(led.redLED);
 }
 
 void greenButtonCallback(void) {
 	LED_turnOnLED(led.greenLED);
-	delay_ms(2000);
+	//delay_ms(2000);
+	newDelay_ms(2000);
 	LED_turnOffLED(led.greenLED);
 }
 
 void blueButtonCallback(void) {
 	LED_turnOnLED(led.blueLED);
-	delay_ms(2000);
+	//delay_ms(2000);
+	newDelay_ms(2000);
 	LED_turnOffLED(led.blueLED);
 }
 
 void BSP_waitForCharacter(void) {
-	Button_readPress(&buttons.redButton, &redButtonCallback);
-	Button_readPress(&buttons.greenButton, &greenButtonCallback);
-	Button_readPress(&buttons.blueButton, &blueButtonCallback);
+	greenButtonCallback();
+	gameLoop(&led, &buttons);
+	//Button_readPress(&buttons.redButton, &redButtonCallback);
+	//Button_readPress(&buttons.greenButton, &greenButtonCallback);
+	//Button_readPress(&buttons.blueButton, &blueButtonCallback);
+	
 	/*while(!newLine) __WFI();
 	
 	while(rb.readPosition != rb.writePosition) {

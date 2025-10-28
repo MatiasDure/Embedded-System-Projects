@@ -499,6 +499,16 @@
               <FileType>5</FileType>
               <FilePath>.\STM32CubeMX\Target_1\STM32CubeMX\Src\delay.h</FilePath>
             </File>
+            <File>
+              <FileName>game.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\STM32CubeMX\Target_1\STM32CubeMX\Src\game.h</FilePath>
+            </File>
+            <File>
+              <FileName>game.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\STM32CubeMX\Target_1\STM32CubeMX\Src\game.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>

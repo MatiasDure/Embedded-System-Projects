@@ -11,7 +11,8 @@ void SysTick_Handler(void) {
 void DelayService_init(void) {
 	SystemCoreClockUpdate();
 	SysTick->LOAD = SystemCoreClock / 1000U - 1U;
-	SysTick->CTRL = (SysTick_CTRL_CLKSOURCE_Msk) | (SysTick_CTRL_TICKINT_Msk) | (SysTick_CTRL_ENABLE_Msk); 
+	SysTick->VAL = 0U;
+	SysTick->CTRL = (SysTick_CTRL_CLKSOURCE_Msk) | (SysTick_CTRL_TICKINT_Msk) | (SysTick_CTRL_ENABLE_Msk);
 }
 /* 
 	Update delay with systick implementation for more accurate delays. 
@@ -22,6 +23,15 @@ void delay_ms(uint32_t ms) {
 		// clock speed is 12MHz, so for 1 ms, we want to waste 12000 cycles 12000/12000000 = 0.001s = 1ms, 
 		// the for loop takes different amount of cycles depending on the compiler optimization, so we divide 12000 by 12 for a close estimate
 		for(volatile uint16_t j = 0; j < 1000U; ++j) {}
+	}
+}
+
+void newDelay_ms(uint32_t ms) {
+	uint32_t initialTimetamp = getSysTickCounter();
+	
+	while(!hasDelayElapsed(initialTimetamp, ms)) {
+		// put cpu to sleep until systick interrupt wakes it up during busy polling
+		__WFI();
 	}
 }
 
@@ -41,5 +51,5 @@ uint32_t getSysTickCounter(void) {
 }
 
 uint8_t hasDelayElapsed(uint32_t timer, uint32_t delay) {
-	return (tick - timer) >= delay;
+	return (getSysTickCounter() - timer) >= delay;
 }
