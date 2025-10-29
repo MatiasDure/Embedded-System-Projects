@@ -22,7 +22,6 @@ typedef struct {
 } Button_TypeDef;
 
 void Button_init(Button_TypeDef *buttons);
-void Button_readPress(DebouncedButton_TypeDef *button, void (*onButtonPressed)());
-
+uint8_t Button_readPress(DebouncedButton_TypeDef *button);
 
 #endif

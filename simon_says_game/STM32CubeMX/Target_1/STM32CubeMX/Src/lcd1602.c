@@ -90,6 +90,10 @@ void LCD_writeText(LCD_TypeDef *lcd, const char *text, uint8_t length) {
 	}
 }
 
+void LCD_writeCharacter(LCD_TypeDef *lcd, const char character) {
+	LCD_writeData(lcd, character, delay_none, 0);
+}
+
 void LCD_clearScreen(LCD_TypeDef *lcd) {
 	LCD_writeCommand(lcd, 0x1, delay_ms, 2);
 }
@@ -97,6 +101,42 @@ void LCD_clearScreen(LCD_TypeDef *lcd) {
 void LCD_displayControl(LCD_TypeDef *lcd, uint8_t displayOn, uint8_t cursorOn, uint8_t cursorBlinkingOn) {
 	uint8_t displayControlCommand = (0x8U | displayOn << 2U | cursorOn << 1U | cursorBlinkingOn << 0U);
 	LCD_writeCommand(lcd, displayControlCommand, delay_none, 0);
+}
+
+static void getAsciiValue(char *buffer, uint32_t number, uint8_t length) {
+	// start from the end to reverse order
+	char *ptr = buffer + length - 1;
+	while(number > 0) {
+		uint8_t res = number % 10;
+		*ptr-- = res + '0'; // hex ascii value for 0 is 0x30 and goes up to 0x39 for 9
+		--length;
+		number /= 10;
+	}
+	
+	while(length--) {
+		*ptr-- = '0'; //set leftovers to 0
+	}
+}
+
+static uint8_t getBufferSize(uint32_t number) {
+	uint8_t bufferSize = 0;
+	do {
+		number /= 10;
+		++bufferSize;
+	} while(number);
+	
+	return bufferSize;
+}
+
+void LCD_writeNumber(LCD_TypeDef *lcd, uint32_t number) {
+	uint8_t bufferSize = getBufferSize(number);
+	if(bufferSize < 2) {
+		LCD_writeCharacter(lcd, (number + '0'));
+		return;
+	}
+	char buffer[bufferSize];
+	getAsciiValue(buffer, number, bufferSize);
+	LCD_writeText(lcd, buffer, bufferSize);
 }
 
 // takes in a hexadecimal value and two pointers to separate the high a low nibbles for LCD 4-bit mode

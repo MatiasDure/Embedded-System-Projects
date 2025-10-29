@@ -274,7 +274,7 @@ typedef struct
 
 typedef struct {
 	GPIO_TypeDef *port;
-	uint8_t pin_number;
+	const uint8_t pin_number;
 } STM_PinDef;
 
 

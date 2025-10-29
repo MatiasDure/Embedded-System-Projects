@@ -4,9 +4,9 @@
 #include <stm32c031xx.h>
 
 typedef struct {
-	STM_PinDef blueLED;
-	STM_PinDef redLED;
-	STM_PinDef greenLED;
+	const STM_PinDef blueLED;
+	const STM_PinDef redLED;
+	const STM_PinDef greenLED;
 } LED_TypeDef;
 
 void LED_LEDsInit(LED_TypeDef *leds);

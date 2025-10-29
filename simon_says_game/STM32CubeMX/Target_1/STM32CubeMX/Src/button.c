@@ -13,17 +13,18 @@ void Button_init(Button_TypeDef *buttons) {
 	button_set_input(&buttons->redButton, 3U);
 }
 
-void Button_readPress(DebouncedButton_TypeDef *button, void (*onButtonPressed)()) {
+uint8_t Button_readPress(DebouncedButton_TypeDef *button) {
 	switch(button->state) {
 		case NOT_DEBOUNCING:
 			// button is not pressed
 			if(!(button->pinInfo.port->IDR & (1U << button->pinInfo.pin_number))) {
 				button->isPressed = 0;
-				return;
+				break;
 			}
 			button->lastTrackedTime = getSysTickCounter();
 			// button was already being pressed
-			if(button->isPressed) return;
+			if(button->isPressed) break;
+			
 			button->state = DEBOUNCING;
 			break;
 		case DEBOUNCING:
@@ -32,14 +33,15 @@ void Button_readPress(DebouncedButton_TypeDef *button, void (*onButtonPressed)()
 					button->state = NOT_DEBOUNCING;
 					break;
 				}
-			if(!hasDelayElapsed(button->lastTrackedTime, 5)) return;
+			if(!hasDelayElapsed(button->lastTrackedTime, 5)) break;
 				
 			button->state = NOT_DEBOUNCING;
 			button->isPressed = 1;
-			onButtonPressed();
-			break;
+			return 1;
 		default:
 			// shouldn't go in here
 			break;
 	}
+	
+	return 0;
 }

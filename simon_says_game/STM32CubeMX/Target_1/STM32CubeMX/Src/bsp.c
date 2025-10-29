@@ -39,30 +39,15 @@ LED_TypeDef led = {
 };
 
 Button_TypeDef buttons = {
-	{ GPIOA, BUTTON_RED_PA7, 0U, NOT_DEBOUNCING, 0U },
-	{ GPIOA, BUTTON_GREEN_PA4, 0U, NOT_DEBOUNCING, 0U },
-	{ GPIOA, BUTTON_BLUE_PA8, 0U, NOT_DEBOUNCING, 0U },
+	{ {GPIOA, BUTTON_RED_PA7}, 0U, NOT_DEBOUNCING, 0U },
+	{ {GPIOA, BUTTON_GREEN_PA4}, 0U, NOT_DEBOUNCING, 0U },
+	{ {GPIOA, BUTTON_BLUE_PA8}, 0U, NOT_DEBOUNCING, 0U },
 };
-
-void getAsciiValue(char *buffer, uint8_t number, uint8_t length) {
-	// start from the end to reverse order
-	char *ptr = buffer + length - 1;
-	while(number > 0) {
-		uint8_t res = number % 10;
-		*ptr-- = res + 0x30;
-		--length;
-		number /= 10;
-	}
-	
-	while(length--) {
-		*ptr-- = 0x30;
-	}
-}
 
 void BSP_Init(void) {
 	BSP_portsInit();
-	/*LCD_init(&lcd);
-	uint8_t score = 0;
+	LCD_init(&lcd);
+	/*uint8_t score = 0;
 	char buffer[3];
 	getAsciiValue(buffer, score, 3);
 	LCD_writeText(&lcd, buffer, 3);
@@ -186,8 +171,10 @@ void blueButtonCallback(void) {
 }
 
 void BSP_waitForCharacter(void) {
-	greenButtonCallback();
-	gameLoop(&led, &buttons);
+	
+	//LCD_clearScreen(&lcd);
+	//LCD_displayControl(&lcd, 0,0,0);
+	gameLoop(&led, &buttons, &lcd);
 	//Button_readPress(&buttons.redButton, &redButtonCallback);
 	//Button_readPress(&buttons.greenButton, &greenButtonCallback);
 	//Button_readPress(&buttons.blueButton, &blueButtonCallback);

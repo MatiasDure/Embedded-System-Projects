@@ -1,6 +1,6 @@
 #include "led.h"
 
-static inline void led_set_output(STM_PinDef *firstLedStructMember, uint8_t length) {
+static inline void led_set_output(const STM_PinDef *firstLedStructMember, uint8_t length) {
 	for(uint8_t i = 0; i < length; ++i) {
 		firstLedStructMember[i].port->MODER &= ~(3U << (firstLedStructMember[i].pin_number * 2U));
 		firstLedStructMember[i].port->MODER |= (1U << (firstLedStructMember[i].pin_number * 2U));

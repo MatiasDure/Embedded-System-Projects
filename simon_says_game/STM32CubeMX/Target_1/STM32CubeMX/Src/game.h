@@ -3,6 +3,7 @@
 
 #include "led.h"
 #include "button.h"
+#include "lcd1602.h"
 
 typedef enum {
 	WAIT_FOR_START,
@@ -12,7 +13,7 @@ typedef enum {
 	GAME_OVER
 } GameState;
 
-void gameLoop(LED_TypeDef *leds, Button_TypeDef *buttons);
+void gameLoop(LED_TypeDef *leds, Button_TypeDef *buttons, LCD_TypeDef *lcd);
 
 
 #endif
