@@ -1,5 +1,7 @@
 #include "lcd1602.h"
 
+#define CHAR_LIMIT 16U
+
 static void LCD_wake_up_sequence(LCD_TypeDef *lcd);
 static void writeNibbles(LCD_TypeDef *lcd, uint8_t *nibbles);
 static void LCD_sendData(STM_PinDef *enable_pin);
@@ -80,13 +82,77 @@ void LCD_writeData(LCD_TypeDef *lcd, uint8_t data, delayType delayFunc, uint32_t
 	writeNibbles(lcd, binaryHighNibbles);
 	// send low nibbles
 	writeNibbles(lcd, binaryLowNibbles);
-	delay_us(40);
+	delay_us(43);
 	delayFunc(delayTime);
 }
 
 void LCD_writeText(LCD_TypeDef *lcd, const char *text, uint8_t length) {
 	for(uint8_t i = 0; i < length; ++i) {
 		LCD_writeData(lcd, *text++, delay_none, 0);
+	}
+}
+
+static void fillWithSpaces(LCD_TypeDef *lcd, uint8_t spaces) {
+	for(uint8_t i = 0; i < spaces; ++i) {
+		LCD_writeData(lcd, 0x20U, delay_none, 0);
+	}
+}
+
+static void scrollOut(LCD_TypeDef *lcd, const char *text, uint8_t charactersToPrint, uint8_t startingIndex) {
+	const char *pointer = text + startingIndex;
+	if(charactersToPrint >= CHAR_LIMIT) {
+			LCD_writeText(lcd, pointer, CHAR_LIMIT);
+	} else {
+			LCD_writeText(lcd, pointer, charactersToPrint);
+			fillWithSpaces(lcd, CHAR_LIMIT - charactersToPrint);
+	}
+	// reset AC to address 0x0
+	LCD_writeCommand(lcd, 0x80, delay_us, 40);
+}
+
+static void scrollIn(LCD_TypeDef *lcd, const char *text, uint8_t startingAddres) {
+	LCD_writeCommand(lcd, 0x80 + startingAddres, delay_us, 40);
+	// print n characters, where n is 0xF - startAddress + 1. 0xF = highest memory address location
+	LCD_writeText(lcd, text, 0xF - startingAddres + 1);
+}
+
+static void resetScroll(Scroll_TypeDef *scroll) {
+	scroll->startIndex = 0U;
+	scroll->startAddress = 0xFU;
+}
+
+void LCD_writeScrollText(LCD_TypeDef *lcd, Scroll_TypeDef *scroll, const char *text, uint8_t length, uint16_t interval) {
+	if(!hasDelayElapsed(scroll->lastTickStored, interval)) return;
+	// we don't need to scroll since everything can be shown
+	if(length < (CHAR_LIMIT + 1U)) {
+		// implement scrolling for any length
+		//LCD_writeText(lcd, text, length);
+		return;
+	}
+	
+	switch(scroll->state) {
+		case INACTIVE:
+			break;
+		case SCROLL_IN:
+			scrollIn(lcd, text, scroll->startAddress--);
+			scroll->lastTickStored = getSysTickCounter();
+			//newDelay_ms(interval);
+		
+			if(scroll->startAddress == 0x0U) scroll->state = SCROLL_OUT; 
+			break;
+		case SCROLL_OUT:
+			scrollOut(lcd, text, length - scroll->startIndex, scroll->startIndex++);
+			scroll->lastTickStored = getSysTickCounter();	
+			//newDelay_ms(interval);
+		
+			if(scroll->startIndex > length) scroll->state = RESETTING;
+			break;
+		case RESETTING:
+			resetScroll(scroll);
+			LCD_writeCommand(lcd, 0x8F, delay_us, 40);
+			scroll->state = INACTIVE;
+		default:
+			break;
 	}
 }
 
@@ -103,18 +169,24 @@ void LCD_displayControl(LCD_TypeDef *lcd, uint8_t displayOn, uint8_t cursorOn, u
 	LCD_writeCommand(lcd, displayControlCommand, delay_none, 0);
 }
 
+void LCD_placeCursorAt(LCD_TypeDef *lcd, uint8_t address) {
+	LCD_writeCommand(lcd, 0x80 + address, &delay_none, 0); 
+}
+
 static void getAsciiValue(char *buffer, uint32_t number, uint8_t length) {
 	// start from the end to reverse order
 	char *ptr = buffer + length - 1;
 	while(number > 0) {
 		uint8_t res = number % 10;
-		*ptr-- = res + '0'; // hex ascii value for 0 is 0x30 and goes up to 0x39 for 9
+		// hex ascii value for 0 is 0x30 and goes up to 0x39 for 9
+		*ptr-- = res + '0';
 		--length;
 		number /= 10;
 	}
 	
 	while(length--) {
-		*ptr-- = '0'; //set leftovers to 0
+		//set leftovers to character 0
+		*ptr-- = '0';
 	}
 }
 

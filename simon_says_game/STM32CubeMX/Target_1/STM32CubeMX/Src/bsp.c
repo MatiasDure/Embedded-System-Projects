@@ -171,7 +171,10 @@ void blueButtonCallback(void) {
 }
 
 void BSP_waitForCharacter(void) {
-	
+	//LCD_writeScrollText(&lcd, &startingScroll, "Press red button to start game", 30, 450);
+	//while(1) {
+		//__WFI();
+	//}
 	//LCD_clearScreen(&lcd);
 	//LCD_displayControl(&lcd, 0,0,0);
 	gameLoop(&led, &buttons, &lcd);
