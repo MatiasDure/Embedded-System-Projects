@@ -544,6 +544,16 @@
               <FileType>5</FileType>
               <FilePath>.\STM32CubeMX\Target_1\STM32CubeMX\Src\button.h</FilePath>
             </File>
+            <File>
+              <FileName>timer.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\STM32CubeMX\Target_1\STM32CubeMX\Src\timer.h</FilePath>
+            </File>
+            <File>
+              <FileName>timer.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\STM32CubeMX\Target_1\STM32CubeMX\Src\timer.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>

@@ -6,6 +6,7 @@
 #include "led.h"
 #include "button.h"
 #include "game.h"
+#include "timer.h"
 
 #define RINGBUFFER_SIZE 128
 #define NEWLINE 0x0A
@@ -44,6 +45,11 @@ Button_TypeDef buttons = {
 	{ {GPIOA, BUTTON_BLUE_PA8}, 0U, NOT_DEBOUNCING, 0U },
 };
 
+Timer_TypeDef timer = {
+	TIM14,
+	{ GPIOA, BUZZER_PWM_TIM1_CH1_PA7 }
+};
+
 void BSP_Init(void) {
 	BSP_portsInit();
 	LCD_init(&lcd);
@@ -63,9 +69,10 @@ void BSP_Init(void) {
 	delay_ms(2000);
 	LED_turnOffLED(led.blueLED);
 	*/
-	LED_LEDsInit(&led);
-	Button_init(&buttons);
+	//LED_LEDsInit(&led);
+	//Button_init(&buttons);
 	DelayService_init();
+	Timer_init(&timer);
 	//BSP_timersInit();
 	//BSP_usartInit();
 }
@@ -73,49 +80,8 @@ void BSP_Init(void) {
 void BSP_portsInit(void) {
 	// enable clock for port A and B
 	RCC->IOPENR |= (1U << 0U) | (1U << 1U);
-}
-
-void BSP_timersInit(void) {
-	// enable APB TIM1 peripheral clock (bit 11)
-	RCC->APBENR2 |= RCC_APBENR2_TIM1EN;
-	
-	// set buzzer pin as TIM alternate function to use PWM output signals
-	GPIOA->MODER &= ~((3U << (BUZZER_PWM_TIM1_CH1_PA0 * 2U)));
-	GPIOA->MODER |= (2U << (BUZZER_PWM_TIM1_CH1_PA0 * 2U));
-	
-	/* 
-		Check Table 13: Port A alternate function mapping (AF0 to AF7) for the value 
-		of the tim1_ch1 alternate function.
-		PA0-PA7 are part of the low registers AFR[0].
-	*/
-	GPIOA->AFR[0] &= ~((0xFU << (BUZZER_PWM_TIM1_CH1_PA0 * 4U)));
-	GPIOA->AFR[0] |= (5U << (BUZZER_PWM_TIM1_CH1_PA0 * 4U));
-	
-	// set prescaler to 12 to set clock speed to 1MHz (12MHz / 12 = 1MHz)
-	TIM1->PSC = 12U;
-	// Set counter top value (auto-reload) 
-	// Timer counts from 0 (1.000.000 hz / 500 = 2kHz frequency for the PWM)
-	TIM1->ARR = 499U;
-	
-	// duty cycle set to 50% of auto-reload value to stay HIGH half the duration of the timer count
-	TIM1->CCR1 = 250;
-	
-	// Configure PWM mode
-	TIM1->CCMR1 &= ~(7U << 4U);
-	TIM1->CCMR1 |= (6U << 4U); 
-	TIM1->CCMR1 |= (1U << 3U);     
-
-	// Enable CH1 output
-	TIM1->CCER |= (1U << 0U);
-	
-	// Main output enable
-	TIM1->BDTR |= (1U << 15U);
-	
-	// Enable counter
-	TIM1->CR1 |= (1U << 0U);
-
-	// Reinitialize the counter and generate an update of the registers
-	TIM1->EGR |= (1U << 0U);
+	// enable APB clock for TIM14 peripheral (bit 15)
+	RCC->APBENR2 |= RCC_APBENR2_TIM14EN;
 }
 
 
@@ -170,14 +136,113 @@ void blueButtonCallback(void) {
 	LED_turnOffLED(led.blueLED);
 }
 
+typedef struct {
+    uint16_t frequency; // Frequency in Hz
+    uint16_t duration;  // Duration in milliseconds
+} Note;
+
+
 void BSP_waitForCharacter(void) {
+	// Used note sequence from: https://blogs.glowscotland.org.uk/sb/public/youthmusicinitiative/uploads/sites/3670/2020/09/09143506/Ipad-Bigger-Harry-Potter-Tune-Notes-Only.pdf
+	Note hedwigTheme[] = {
+    {494, 400}, 
+    {659, 600}, 
+    {784, 200},   
+    {740, 400},   
+    {659, 800},   
+    {988, 400},   
+    {880, 1000},  
+    {740, 1000},  
+    {659, 600},   
+    {784, 200},   
+    {740, 400},   
+    {622, 600},   
+    {698, 400},   
+    {494, 1400},  
+		//---------------
+		{494, 400},   
+    {659, 600},   
+    {784, 200},   
+    {740, 400},   
+    {659, 800},   
+    {988, 400},   
+    {1175, 800},  
+    {1109, 400},  
+    {1047, 800},  
+    {831, 400},  
+    {1047, 600},  
+    {988, 200}, 
+    {932, 400},   
+    {466, 800},   
+    {784, 400},  
+    {659, 1400},  
+		// --------------
+		{784, 400},    
+    {988, 800},   
+    {784, 400},   
+    {988, 800},   
+    {784, 400},    
+    {1047, 800},   
+    {988, 400},   
+    {932, 800},    
+    {698, 400},   
+    {784, 600},   
+    {988, 200},   
+    {932, 400},   
+    {466, 800},   
+    {494, 400},    
+    {988, 1400},   
+		// ---------------
+		{784, 400},    
+    {988, 800},   
+    {784, 400},   
+    {988, 800},   
+    {784, 400},   
+    {1175, 800},  
+    {1109, 400},   
+    {1047, 800},   
+    {831, 400},   
+    {1047, 600},
+    {988, 200},   
+    {932, 400},  
+    {466, 800},  
+    {784, 400},   
+    {659, 1400},   
+};
+	
+for (uint8_t i = 0; i < sizeof(hedwigTheme)/sizeof(hedwigTheme[0]); ++i) {
+    Timer_updateFreq(timer.timer, hedwigTheme[i].frequency, 50); // 50% duty cycle
+    newDelay_ms(hedwigTheme[i].duration);
+}
+
 	//LCD_writeScrollText(&lcd, &startingScroll, "Press red button to start game", 30, 450);
 	//while(1) {
 		//__WFI();
 	//}
 	//LCD_clearScreen(&lcd);
 	//LCD_displayControl(&lcd, 0,0,0);
-	gameLoop(&led, &buttons, &lcd);
+	
+
+/*
+for (uint8_t i = 0; i < sizeof(hedwigThemeRow2)/sizeof(hedwigThemeRow2[0]); ++i) {
+    Timer_updateFreq(timer.timer, hedwigThemeRow2[i].frequency, 50); // 50% duty cycle
+    newDelay_ms(hedwigThemeRow2[i].duration);
+}
+
+for (uint8_t i = 0; i < sizeof(hedwigThemeRow3)/sizeof(hedwigThemeRow3[0]); ++i) {
+    Timer_updateFreq(timer.timer, hedwigThemeRow3[i].frequency, 50); // 50% duty cycle
+    newDelay_ms(hedwigThemeRow3[i].duration);
+}
+
+for (uint8_t i = 0; i < sizeof(hedwigThemeRow4)/sizeof(hedwigThemeRow4[0]); ++i) {
+    Timer_updateFreq(timer.timer, hedwigThemeRow4[i].frequency, 50); // 50% duty cycle
+    newDelay_ms(hedwigThemeRow4[i].duration);
+}*/
+
+
+
+
+	// gameLoop(&led, &buttons, &lcd);
 	//Button_readPress(&buttons.redButton, &redButtonCallback);
 	//Button_readPress(&buttons.greenButton, &greenButtonCallback);
 	//Button_readPress(&buttons.blueButton, &blueButtonCallback);

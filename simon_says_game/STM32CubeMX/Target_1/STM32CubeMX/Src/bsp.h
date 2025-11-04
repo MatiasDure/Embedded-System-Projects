@@ -20,12 +20,13 @@
 // input peripherals
 // buttons ---------
 #define BUTTON_GREEN_PA4 4U
-#define BUTTON_RED_PA7 7U
+#define BUTTON_RED_PA7 7U // need to change this one to a different pin
 #define BUTTON_BLUE_PA8 8U
 
 // alternate function peripherals
 // buzzer ----------
-#define BUZZER_PWM_TIM1_CH1_PA0 0U
+//#define BUZZER_PWM_TIM1_CH1_PA0 0U
+#define BUZZER_PWM_TIM1_CH1_PA7 7U
 // UART ----------
 #define USART2_TX_PA2 2U
 #define USART2_RX_PA3 3U
