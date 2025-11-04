@@ -209,10 +209,83 @@ void BSP_waitForCharacter(void) {
     {784, 400},   
     {659, 1400},   
 };
+
+// melody from: https://blogs.glowscotland.org.uk/sb/public/youthmusicinitiative/uploads/sites/3670/2020/09/09142521/Ipad-Pirates-of-the-Caribbean-Tune-Notes-Only.pdf
+Note piratesTheme[] = {
+		{587, 400}, // d
+    {587, 600}, // d
+    {587, 200},   // d 
+    {659, 200},   // e - here
+    {698, 400},   // f
+    {698, 600},   // f
+    {698, 200},  // f
+    {784, 200},  // g
+    {659, 400},   // e
+    {659, 600},   // e
+    {587, 200},   // d
+    {523, 200},   // c
+    {523, 200},   // c
+    {587, 1000},  // d
+		//---------------
+		{587, 400}, // d
+    {587, 600}, // d
+    {587, 200},   // d 
+    {659, 200},   // e - here
+    {698, 400},   // f
+    {698, 600},   // f
+    {698, 200},  // f
+    {784, 200},  // g
+    {659, 400},   // e
+    {659, 600},   // e
+    {587, 200},   // d
+    {523, 200},   // c
+    {523, 800},   // c
+		//---------------
+		{587, 400}, // d
+    {587, 600}, // d
+    {587, 200},   // d 
+    {698, 200},   // f
+    {784, 400},   // g
+    {784, 600},   // g
+    {784, 200},  // g
+    {880, 200},  // a
+    {932, 400},   // Bb
+    {932, 400},   // Bb
+    {880, 200},   // A
+    {784, 200},   // G
+    {880, 200},   // A
+		{587, 600},   // D
+		//---------------
+		{698, 400}, // f
+    {698, 400}, // f
+    {784, 400},   // g 
+    {880, 200},   // a
+    {587, 600},   // d
+    {587, 200},   // d
+    {698, 200},  // f
+    {659, 400},  // e
+    {659, 600},   // e
+    {698, 200},   // f
+    {587, 200},   // d
+    {659, 1400},   // e
+    //---------------
+		{698, 400}, // f
+    {698, 400}, // f
+    {784, 400},   // g 
+    {880, 200},   // a
+    {587, 600},   // d
+    {587, 200},   // d
+    {698, 200},  // f
+    {659, 400},  // e
+    {659, 600},   // e
+    {587, 200},   // d
+    {523, 200},   // c
+    {587, 1400},   // d
+};
 	
-for (uint8_t i = 0; i < sizeof(hedwigTheme)/sizeof(hedwigTheme[0]); ++i) {
-    Timer_updateFreq(timer.timer, hedwigTheme[i].frequency, 50); // 50% duty cycle
-    newDelay_ms(hedwigTheme[i].duration);
+for (uint8_t i = 0; i < sizeof(piratesTheme)/sizeof(piratesTheme[0]); ++i) {
+    Timer_updateFreq(timer.timer, piratesTheme[i].frequency, 50); // 50% duty cycle
+    newDelay_ms(piratesTheme[i].duration);
 }
 
 	//LCD_writeScrollText(&lcd, &startingScroll, "Press red button to start game", 30, 450);
