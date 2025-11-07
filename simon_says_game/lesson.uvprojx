@@ -509,6 +509,16 @@
               <FileType>1</FileType>
               <FilePath>.\STM32CubeMX\Target_1\STM32CubeMX\Src\game.c</FilePath>
             </File>
+            <File>
+              <FileName>sound.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\STM32CubeMX\Target_1\STM32CubeMX\Src\sound.h</FilePath>
+            </File>
+            <File>
+              <FileName>sound.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\STM32CubeMX\Target_1\STM32CubeMX\Src\sound.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>

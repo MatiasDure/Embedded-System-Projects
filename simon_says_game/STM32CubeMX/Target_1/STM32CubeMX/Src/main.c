@@ -6,8 +6,8 @@ int main(void) {
 	BSP_Init();
 	
 	while(1) {
-	BSP_waitForCharacter();
-		//__WFI();
+	//BSP_waitForCharacter();
+	//	__WFI();
 	}
 	
 	return 0;

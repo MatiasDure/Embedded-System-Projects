@@ -20,7 +20,7 @@
 // input peripherals
 // buttons ---------
 #define BUTTON_GREEN_PA4 4U
-#define BUTTON_RED_PA7 7U // need to change this one to a different pin
+#define BUTTON_RED_PA0 0U // need to change this one to a different pin
 #define BUTTON_BLUE_PA8 8U
 
 // alternate function peripherals

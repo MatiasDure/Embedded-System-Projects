@@ -13,7 +13,7 @@ typedef enum {
 	GAME_OVER
 } GameState;
 
-void gameLoop(LED_TypeDef *leds, Button_TypeDef *buttons, LCD_TypeDef *lcd);
+void gameLoop(LED_TypeDef *leds, Button_TypeDef *buttons, LCD_TypeDef *lcd, TIM_TypeDef *timer);
 
 
 #endif

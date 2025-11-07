@@ -38,7 +38,7 @@ void Timer_init(Timer_TypeDef *timer) {
 	timer->timer->CR1 |= 1U << 0U;
 	
 	// enable signal output to pin
-	timer->timer->CCER |= (1U << 0U);
+	//timer->timer->CCER |= (1U << 0U);
 }
 
 void Timer_updateFreq(TIM_TypeDef *timer, uint16_t frequency, uint8_t dutyCyclePercentage) {	
@@ -49,5 +49,13 @@ void Timer_updateFreq(TIM_TypeDef *timer, uint16_t frequency, uint8_t dutyCycleP
 	timer->ARR = autoReloadValue - 1U;
 	timer->CCR1 = (autoReloadValue * dutyCyclePercentage) / 100U;
 	triggerManualUpdateEvent(timer);
+}
+
+void Timer_enablePWM(TIM_TypeDef *timer) {
+	timer->CCER |= 1U << 0U;
+}
+
+void Timer_disablePWM(TIM_TypeDef *timer) {
+	timer->CCER &= ~(1U << 0U);
 }
 
