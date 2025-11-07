@@ -6,7 +6,7 @@ int main(void) {
 	BSP_Init();
 	
 	while(1) {
-	//BSP_waitForCharacter();
+		BSP_Run();
 	//	__WFI();
 	}
 	

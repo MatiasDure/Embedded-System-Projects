@@ -35,6 +35,6 @@
 #define POTENTIOMETER_ADC_IN1_PA1 1U
 
 void BSP_Init(void);
-void BSP_waitForCharacter(void);
+void BSP_Run(void);
 
 #endif // __BSP_H__

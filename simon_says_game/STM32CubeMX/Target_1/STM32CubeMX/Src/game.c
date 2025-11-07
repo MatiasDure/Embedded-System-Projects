@@ -12,7 +12,6 @@
 #define GREEN 'g'
 #define BLUE 'b'
 
-// prototypes
 static void startingScreen(DebouncedButton_TypeDef *startButton, LCD_TypeDef *lcd, TIM_TypeDef *timer);
 static void populateSequence(char *sequenceArr, uint8_t sequenceLength);
 static void displaySequence(LED_TypeDef *leds, uint16_t interval, char *sequenceArr, uint8_t sequenceLength, LCD_TypeDef *lcd, TIM_TypeDef *timer);
@@ -21,7 +20,6 @@ static void endingScreen(DebouncedButton_TypeDef *restartButton, uint8_t finalSc
 
 static volatile GameState state = WAIT_FOR_START;
 static char colorSequence[SEQUENCE_LENGTH];
-//static char userSequence[SEQUENCE_LENGTH];
 static uint8_t userSeqIndex = 0U;
 static uint8_t score = 0U;
 static Scroll_TypeDef lcdScroll = { 0, 0, RESETTING, 0};
@@ -48,8 +46,8 @@ void gameLoop(LED_TypeDef *leds, Button_TypeDef *buttons, LCD_TypeDef *lcd, TIM_
 			userGuesses(buttons, leds, LED_INTERVAL, lcd, timer);
 			break;
 		case GAME_OVER:
-			endingScreen(&buttons->redButton, score, lcd, timer);
 			// show final score and ask to play again
+			endingScreen(&buttons->redButton, score, lcd, timer);
 			break;
 		default:
 			break;
@@ -84,12 +82,10 @@ static void startingScreen(DebouncedButton_TypeDef *startButton, LCD_TypeDef *lc
 	if(Button_readPress(startButton)){
 		onStartButtonPressed(timer);
 	}
-	
-	// wait for 5ms before checking again to let cpu sleep
 }
 
 static void populateSequence(char *sequenceArr, uint8_t sequenceLength){
-	// use srand() to specifify seed
+	// update to srand() to specifify seed
 	for(uint8_t i = 0; i < sequenceLength; ++i) {
 		uint8_t value = rand() % AMOUNT_COLORS;
 		
@@ -142,7 +138,6 @@ static void displaySequence(LED_TypeDef *leds, uint16_t interval, char *sequence
 		STM_PinDef led = LED_retrieveLEDByChar(leds, sequenceArr[i]);
 		LED_turnOnLED(led);
 		PlayColorNote(timer, sequenceArr[i], interval); 
-		//newDelay_ms(interval);
 		LED_turnOffLED(led);
 		TurnOffSound(timer);
 		newDelay_ms(interval);
@@ -153,19 +148,21 @@ static uint8_t checkGuess(char color) {
 	return color == colorSequence[userSeqIndex];
 }
 
-static void onIncorrectGuess(LCD_TypeDef *lcd) {
+static void displayScore(LCD_TypeDef *lcd) {
 	LCD_placeCursorAt(lcd, 0U);
-	LCD_writeText(lcd, "Score: ", 7);
-	LCD_writeNumber(lcd, ++score);
-	LCD_writeText(lcd, "/5", 2);
+	LCD_writeText(lcd, "Score: ", 7U);
+	LCD_writeNumber(lcd, score);
+	LCD_writeText(lcd, "/", 1U);
+	LCD_writeNumber(lcd, SEQUENCE_LENGTH);
 }
 
-static void onCorrectGuess(LCD_TypeDef *lcd) {
+// Not doing anything for incorrect at the moment
+static void onIncorrectGuess() {
+}
+
+static void onCorrectGuess() {
 	// do things when user guessed correctly
-	LCD_placeCursorAt(lcd, 0U);
-	LCD_writeText(lcd, "Score: ", 7);
-	LCD_writeNumber(lcd, ++score);
-	LCD_writeText(lcd, "/5", 2);
+	++score;
 }
 
 static void DisplayUserGuessFeedback(STM_PinDef led, uint16_t interval, TIM_TypeDef *timer, char color) {
@@ -178,8 +175,9 @@ static void DisplayUserGuessFeedback(STM_PinDef led, uint16_t interval, TIM_Type
 
 static void onUserGuess(char color, const STM_PinDef *led, uint16_t interval, LCD_TypeDef *lcd, TIM_TypeDef *timer) {
 	
-	if(checkGuess(color)) onCorrectGuess(lcd);
-	else onIncorrectGuess(lcd);
+	if(checkGuess(color)) onCorrectGuess();
+	else onIncorrectGuess();
+	displayScore(lcd);
 	
 	DisplayUserGuessFeedback(*led, interval, timer, color);
 	
@@ -190,7 +188,7 @@ static void userGuesses(Button_TypeDef *buttons, LED_TypeDef *leds, uint16_t int
 	if(Button_readPress(&buttons->redButton)) onUserGuess(RED, &leds->redLED, interval, lcd, timer);
 	if(Button_readPress(&buttons->greenButton)) onUserGuess(GREEN, &leds->greenLED, interval, lcd, timer);
 	if(Button_readPress(&buttons->blueButton)) onUserGuess(BLUE, &leds->blueLED, interval, lcd, timer);
-	newDelay_ms(5);
+	newDelay_ms(5U);
 }
 
 typedef enum {
@@ -202,8 +200,8 @@ typedef enum {
 static EndingState endingState = START;
 
 static void ResetStats(void) {
-	score = 0;
-	userSeqIndex = 0;
+	score = 0U;
+	userSeqIndex = 0U;
 	state = CREATE_SEQUENCE;
 }
 
@@ -214,7 +212,7 @@ static void onRestart(TIM_TypeDef *timer) {
 	endingState = START;
 }
 
-static void displayScore(LCD_TypeDef *lcd, uint8_t finalScore) {
+static void displayFinalScore(LCD_TypeDef *lcd, uint8_t finalScore) {
 	LCD_clearScreen(lcd);
 	LCD_placeCursorAt(lcd, 0x03);
 	LCD_writeText(lcd, "GAME  OVER", 10);
@@ -227,8 +225,7 @@ static void displayScore(LCD_TypeDef *lcd, uint8_t finalScore) {
 static void endingScreen(DebouncedButton_TypeDef *restartButton, uint8_t finalScore, LCD_TypeDef *lcd, TIM_TypeDef *timer) {
 	switch(endingState) {
 		case START:	
-			// display score
-			displayScore(lcd, finalScore);
+			displayFinalScore(lcd, finalScore);
 			TurnOnSound(timer);
 			endingState = WAITING;
 			break;
